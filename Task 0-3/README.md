@@ -42,3 +42,10 @@ How many parameters do you need (i.e. how big is n in your n-gram model)?
 Can you think of simple ways to "smooth" the probabilities (think about giving all n-grams a non-zero probability even if they aren't observed in the data) ?
 How do you evaluate whether your model is any good?
 How can you use backoff models to estimate the probability of unobserved n-grams?
+
+## Note: Milestone report review criteria
+  1. Does the link lead to an HTML page describing the exploratory analysis of the training data set?
+  2. Has the data scientist done basic summaries of the three files? Word counts, line counts and basic data tables?
+  3. Has the data scientist made basic plots, such as histograms to illustrate features of the data?
+  4. Was the report written in a brief, concise style, in a way that a non-data scientist manager could appreciate?
+
