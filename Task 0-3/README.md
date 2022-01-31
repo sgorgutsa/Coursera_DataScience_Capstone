@@ -16,7 +16,7 @@
   
 ## Task 1
   1. Tokenization - identifying appropriate tokens such as words, punctuation, and numbers. Writing a function that takes a file as input and returns a tokenized version of it.
-  2.Profanity filtering - removing profanity and other words you do not want to predict.
+  2. Profanity filtering - removing profanity and other words you do not want to predict.
 
 ## Task 2
   1. Exploratory analysis - perform a thorough exploratory analysis of the data, understanding the distribution of words and relationship between the words in the corpora. 
