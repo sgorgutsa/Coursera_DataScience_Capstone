@@ -1,0 +1,81 @@
+---
+title: "Coursera - Data Science Capstone Project - Milestone Report 1"
+author: "S. Gorgutsa"
+date: "1/31/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Summary
+This report covers Tasks 0-3 of the Coursera's Data Science Capstone project. The general goal of the Capstone project is: based on the provided corpora of Blog, News and Twitter records build a word prediction algorithm and deploy it as a Shiny app. However, as per assignment requirements, the present report covers only the major features of the available data set and briefly summarize my plans for creating the prediction algorithm and Shiny app in a way that would be understandable to a non-data scientist manager. 
+The key elements of the report shall:
+
+1. Demonstrate that you've downloaded the data and have successfully loaded it in.
+2. Create a basic report of summary statistics about the data sets.
+3. Report any interesting findings that you amassed so far.
+4. Get feedback on your plans for creating a prediction algorithm and Shiny app. 
+
+Original source data is available at: https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip 
+
+
+## Loading Data (Task 0)
+
+Preparing the enironment
+```{r, message=FALSE}
+library(tidytext)
+library(dplyr)
+library(ggplot2)
+library(R.utils)
+library(stringr)
+library(ngram)
+```
+
+File path to the data sets ('twitter_location', 'blog_location','news_location') is defined in the code chunk that is however omitted (include = FALSE) for simplicity & privacy.
+```{r,include = FALSE} 
+# File locations
+twitter_location <- 'J:/c2t3/Data Science/Capstone Project/final/en_US/en_US.twitter.txt'
+blog_location <- 'J:/c2t3/Data Science/Capstone Project/final/en_US/en_US.blogs.txt'
+news_location <- 'J:/c2t3/Data Science/Capstone Project/final/en_US/en_US.news.txt'
+```
+
+
+```{r, }
+# Loading the data
+twitter <- readLines(twitter_location)
+news <- readLines(news_location)
+blogs <- readLines(blog_location)
+```
+We can now perform a general assessment of the available corpora, for example number of words and lines in each data set (Blog, News, Twitter)
+```{r}
+# Counting number of lines (R.utils lib)
+Nlines_twitter <- countLines(twitter_location)
+Nlines_news <- countLines(news_location)
+Nlines_blogs <- countLines(blog_location)
+
+# Counting number of word (stringr lib), seems faster than alternatives
+Nwords_twitter <- wordcount(twitter, sep = " ")
+Nwords_news <- wordcount(news, sep = " ")
+Nwords_blogs <- wordcount(blogs, sep = " ")
+
+```
+
+```{r}
+# Counting number of lines
+```
+
+Unsurprisingly the Blog data set has the most number of words, and curiously enough Twitter has lowest word per line count `r Nword_twitter/Nlines_twitter` 
+
+## Cleaning & Sampling Data (Task 1) 
+
+## Exploratory Data analysis
+
+### Basic Analysis (Task 2)
+
+### Modelling (Task 3)
+
+## Next
+On the side note, it can be seen that English corpora is generally much larger than those of the other languages. Hence it would be interesting to compare the performance of the algorithm developed and tuned on English corpora using other languages. 
+
