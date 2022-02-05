@@ -39,43 +39,203 @@ File path to the data sets ('twitter_location', 'blog_location','news_location')
 twitter_location <- 'J:/c2t3/Data Science/Capstone Project/final/en_US/en_US.twitter.txt'
 blog_location <- 'J:/c2t3/Data Science/Capstone Project/final/en_US/en_US.blogs.txt'
 news_location <- 'J:/c2t3/Data Science/Capstone Project/final/en_US/en_US.news.txt'
+badwords_location <-'J:/c2t3/Data Science/Capstone Project/final/full-list-of-bad-words_text-file_2021_01_18.txt'
 ```
 
 
-```{r, }
+```{r, cache = TRUE,  warning=FALSE}
 # Loading the data
 twitter <- readLines(twitter_location)
 news <- readLines(news_location)
 blogs <- readLines(blog_location)
 ```
 We can now perform a general assessment of the available corpora, for example number of words and lines in each data set (Blog, News, Twitter)
-```{r}
+```{r, cache = TRUE}
 # Counting number of lines (R.utils lib)
 Nlines_twitter <- countLines(twitter_location)
 Nlines_news <- countLines(news_location)
 Nlines_blogs <- countLines(blog_location)
 
-# Counting number of word (stringr lib), seems faster than alternatives
+# Counting number of words ngram lib,
 Nwords_twitter <- wordcount(twitter, sep = " ")
 Nwords_news <- wordcount(news, sep = " ")
 Nwords_blogs <- wordcount(blogs, sep = " ")
 
 ```
 
-```{r}
-# Counting number of lines
+Such statistics on data is better visualized with graphs. 
+
+```{r, message=FALSE}
+library(gridExtra)
+
+WC <- data.frame(dataset=c("Twitter","News","Blog"), wordc=c(Nwords_twitter, Nwords_news, Nwords_blogs))
+
+WPL <- data.frame(dataset=c("Twitter","News","Blog"), NWPL=c(Nwords_twitter / Nlines_twitter , Nwords_news / Nlines_news, Nwords_blogs / Nlines_blogs))
+
+p1<-ggplot(data=WC, aes(x=dataset, y=wordc, fill = dataset)) +
+        geom_bar(stat="identity")+
+        ylab("Total word count")+
+        theme(axis.title.x=element_blank())
+
+p2<-ggplot(data=WPL, aes(x=dataset, y=NWPL, fill = dataset)) +
+        geom_bar(stat="identity")+
+        ylab("Words per line")+
+        theme(axis.title.x=element_blank())
+
+grid.arrange(p1, p2, ncol=2)
+
 ```
 
-Unsurprisingly the Blog data set has the most number of words, and curiously enough Twitter has lowest word per line count `r Nword_twitter/Nlines_twitter` 
+Unsurprisingly the Blog data set has the most number of words. 
 
-## Cleaning & Sampling Data (Task 1) 
+### English vs Other Languages
+For this project I will continue working with English corpora, as it is generally much larger, hence the prediction models should have better accuracy (also regular expressions as easier, n-gram approaches more relevant, etc.) However,it would be interesting to compare the performance of the final model on different language (Ru or Fr in my case).
+
+## Sampling data
+Working with entire dataset is inconvenient therefore I decided to randomly subset 5% of the data from each corpora (Twitter, News, Blogs). 
+```{r, cache = TRUE }
+# Random subset of the data
+set.seed(1234)
+twitter_sub <- sample(twitter, ceiling(.05*length(twitter)))
+news_sub <- sample(news, ceiling(.05*length(news)))
+blogs_sub <- sample(blogs, ceiling(.05*length(blogs)))
+
+# Calculate number of words in the subset
+NW_sub_total <- c(wordcount(twitter_sub, sep = " "), wordcount(news_sub, sep = " "), wordcount(blogs_sub, sep = " "))
+```
+
+## Cleaning Data (Task 1) 
+First need to perform basic data clean up (Text Mining package, TM is incredibly useful for that).
+```{r, cache = TRUE, message=FALSE}
+library(tm)
+library(data.table)
+
+# Remove profanity
+BadwordsList <- readLines(badwords_location)
+twitter_sub <- removeWords(twitter_sub,BadwordsList)
+news_sub <- removeWords(news_sub,BadwordsList)
+blogs_sub <- removeWords(blogs_sub,BadwordsList)
+
+# Calculate number of words in the subset after removing
+NW_sub_prof <- c(wordcount(twitter_sub, sep = " "), wordcount(news_sub, sep = " "), wordcount(blogs_sub, sep = " "))
+NW_sub_prof <- 100*(NW_sub_total - NW_sub_prof)/NW_sub_total
+
+# Remove non-latin characters, just in case
+twitter_sub <- iconv(twitter_sub, "latin1", "ASCII", sub="")
+news_sub <- iconv(news_sub, "latin1", "ASCII", sub="")
+blogs_sub <- iconv(blogs_sub, "latin1", "ASCII", sub="")
+
+# Remove numbers % punctuation
+twitter_sub <- twitter_sub %>% removeNumbers() %>% removePunctuation()
+news_sub <- news_sub %>% removeNumbers() %>% removePunctuation()
+blogs_sub <- blogs_sub %>% removeNumbers() %>% removePunctuation()
+
+```
+Out of curiosity I also decided to check how many "bad words" there actually was in sampled part of the English corpora. It probably is no big surprise that the Twitter is the leader in this comparison. 
+
+```{r}
+BW <- data.frame(dataset=c("Twitter","News","Blog"), NW_sub_prof)
+
+ggplot(data=BW, aes(x=dataset, y=NW_sub_prof, fill = dataset)) +
+        geom_bar(stat="identity")+
+        ylab("Bad words in each corpus, in % ")+
+        theme(axis.title.x=element_blank())
+
+```
+
+At this moment I decided not to remove stop words. The overall goal of the project is to predict the next word and not to classify the text. I also export cleaned up data for further analysis with tidy. Easier than to transform data formats. Plus it makes it easier to work on the markdown report.
+
+
+```{r, eval=FALSE}
+# Export cleaned data
+write.table(twitter_sub, file='Task 0-3/twitter_sub.txt', row.names=FALSE, col.names=FALSE)
+write.table(news_sub, file='Task 0-3/news_sub.txt', row.names=FALSE, col.names=FALSE)
+write.table(blogs_sub, file='Task 0-3/blogs_sub.txt', row.names=FALSE, col.names=FALSE)
+```
+
+Note: certain chunks have 'eval = FALSE' property to prevent Knitr to constantly write / read data every time I modfiy the text of the report. Same for 'cache = TRUE' option of the other chunks. 
 
 ## Exploratory Data analysis
+First let's load black clean data
+```{r }
+library(readtext)
+load_twitter <- readtext(file='C:/Users/Stephan/Documents/R/Coursera_DataScience_Capstone/Task 0-3/twitter_sub.txt')
+load_news <- readtext(file='C:/Users/Stephan/Documents/R/Coursera_DataScience_Capstone/Task 0-3/news_sub.txt')
+load_blogs <- readtext(file='C:/Users/Stephan/Documents/R/Coursera_DataScience_Capstone/Task 0-3/blogs_sub.txt')
+```
+
+Tokenization is a way of separating a piece of text into smaller units called tokens. Here, tokens can be either words, characters, or subwords (n-gram characters).
+```{r, cache = TRUE}
+#Load and Tokenize the data
+twitter_token <- load_twitter %>% 
+                unnest_tokens(word,text)
+news_token <- load_news %>% 
+                unnest_tokens(word,text)
+blogs_token <- load_blogs %>% 
+                unnest_tokens(word,text)
+```
 
 ### Basic Analysis (Task 2)
+Now we can see which words appear more frequently in the corpora. However, since I did not remove stopwords (words like “the”, “of”, “and", "like",etc.) it would make more sense to use inverse document frequency (idf). Using inverse document frequency reduces the importance (weight) of the most frequent words, and increases the weight of words that appear less frequently. Finally, if you multiply the term frequency and inverse document frequency together, you get a statistic (called tf-idf) that is intended to measure how important a word is to a document. For this exercise it also makes sense to merge the 3 data sets together.
+```{r, cache=TRUE}
+library(forcats)
+# merging data sets
+merge_read <- rbindlist(list(load_twitter,load_news,load_blogs))
 
-### Modelling (Task 3)
+merge_token <- merge_read %>% 
+             unnest_tokens(word, text)
+
+as_tibble(merge_token) %>% 
+             count(doc_id, word, sort = TRUE) %>%
+             bind_tf_idf(word, doc_id, n) %>%
+             arrange(desc(tf_idf)) %>%
+             group_by(doc_id) %>%
+             slice_max(tf_idf, n = 10) %>%
+             ungroup() %>%
+             ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = doc_id)) +
+             geom_col(show.legend = FALSE) +
+             facet_wrap(~doc_id, ncol = 3, scales = "free") +
+             labs(x = "tf-idf", y = NULL)
+
+
+```
+
+### N-grams (Task 3)
+Using N-grams we essentially tokenize adjacent words. As the first step, in this assignment we will look at 2-grams (two adjacent words) and 3-grams (three adjacent words). 
+```{r, cache=TRUE}
+# 2 grams
+merge_token_2 <- merge_read %>% 
+                unnest_tokens(bigram, text, token = "ngrams", n = 2)
+# 3 grams
+merge_token_3 <- merge_read %>% 
+                unnest_tokens(bigram, text, token = "ngrams", n = 3) 
+        
+# Reporting results
+
+p3 <- merge_token_2 %>% count(bigram,sort = TRUE) %>% 
+    mutate(bigram = reorder(bigram, n)) %>%
+    top_n(10) %>%
+    ggplot(aes(bigram, n)) +
+    geom_col(fill = "lightblue") +
+    xlab(NULL) +
+    coord_flip() + 
+    ggtitle("Top10 words with 2-grams")
+    
+p4 <- merge_token_3 %>% count(bigram,sort = TRUE) %>%
+    mutate(bigram = reorder(bigram, n)) %>%
+    top_n(10) %>%
+    ggplot(aes(bigram, n)) +
+    geom_col(fill = "green") +
+    xlab(NULL) +
+    coord_flip() + 
+    ggtitle("Top10 words with 3-grams")
+    
+grid.arrange(p3, p4, ncol=2)
+```
+
 
 ## Next
-On the side note, it can be seen that English corpora is generally much larger than those of the other languages. Hence it would be interesting to compare the performance of the algorithm developed and tuned on English corpora using other languages. 
+
+1. Should probably consider removing the stopwords nevertheless. 
+2. Start building predictive model.
 
