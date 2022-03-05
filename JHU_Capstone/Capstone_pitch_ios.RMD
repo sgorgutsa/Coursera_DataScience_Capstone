@@ -1,0 +1,77 @@
+---
+title: "Next Word Shiny app"
+subtitle: "A Shiny app that fast, but not very accurately predicts the next most probable word depending on the user text input."
+author: S. Gorgutsa
+date: 2022-03-04
+output:
+   ioslides_presentation:
+    widescreen: true
+    smaller: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
+
+## About the app
+The app was created as a part of the final project in the Coursera's Data Science specialization and is available here: <https://sgorgutsa.shinyapps.io/JHU_Capstone_Shiny/>
+
+```{r pressure, eval=TRUE, echo=FALSE, out.width = '40%',fig.align = 'center'}
+knitr::include_graphics("App_UI.jpg")
+```
+
+
+The source code is available at: <https://github.com/sgorgutsa/Coursera_DataScience_Capstone>
+
+The training data et for the prediction model was previously prepared as described in the Milestone report, available at <https://rpubs.com/sgorgutsa/CrDSCapstone_Milestone1>. In short, from the raw data I removed non-latin characters, punctuation marks, digits, stopwords, and swearing words (based on the publicly available Google's Bad Words list)
+
+## Deployment & Performance
+Since introduction of the SBO (Stupid Back-Off) model R package the deployment of an N-gram prediction model in R became as easy as calling a function. More information on the sbo package is available at
+<https://cran.r-project.org/web/packages/sbo/vignettes/sbo.html>
+
+```{r}
+# Train predictor
+p <- sbo_predictor(object = t_train, # load dataset
+                   N = 3, # Train a 3-gram model
+                   dict = target ~ 0.75, # cover 75% of training corpus
+                   .preprocess = sbo::preprocess, # Preprocessing transformation 
+                   EOS = ".?!:;", # End-Of-Sentence tokens
+                   lambda = 0.4, # Back-off penalization in SBO algorithm
+                   L = 1L, # Number of predictions for input
+                   filtered = "<UNK>"  # Exclude the <UNK> token from predictions
+)
+
+# Generate prediction 
+predict(p, "i love")
+```
+Since the training process is computationally expensive the predictor can be saved as an RDA object (using first 'sbo_predtable' and then 'save' functions ) and after that loaded in global.R of the Shiny app and identified as a predictor (via 'sbo_predictor' function).
+
+
+## Accuracy evaluation
+The accuracy of the predictor can be evaluated using one of the built in functions of the SBO packaged
+```{r}
+# p - is a predictor, output of the sbo_predictor function or loaded output of the sbo_predtable
+
+(evaluation <- eval_sbo_predictor(p, test = t_test))
+
+evaluation %>% # Accuracy for in-sentence predictions
+    filter(true != "<EOS>") %>%
+    summarise(accuracy = sum(correct) / n(),
+              uncertainty = sqrt(accuracy * (1 - accuracy) / n()))
+```
+The resulting accuracy with SBO model and chosen training / test sets turned out to be 
+```{r}
+# A tibble: 1 x 2
+  accuracy uncertainty
+     <dbl>       <dbl>
+1    0.128     0.00865
+```
+## Conclusions
+- The introduction of the SBO package made it very easy to have **some** N-gram prediction model up and  running.
+- While training the model is a very computationally expensive process, the ability to save the trained predictor greatly facilitates hosting of the Shiny app and improves its response time.   
+- At the same time, the accuracy of the model still depends on the fundamentals, such as: 
+    + origins, size and quality of the data set; 
+    + how the data was sampled and cleaned; 
+    + parameters of the model.  
+- To improve the accuracy of the model it might be beneficial to include other text corpora. Blog, News and Twitter text have a specific style (or limitations, such as the number of characters in a Tweet) that might not always correspond to the user expectations.
+
