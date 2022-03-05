@@ -10,25 +10,22 @@ library(shiny)
 shinyUI(fluidPage(
 
     # Application title
-    titlePanel("Next word prediction app"),
-
-    # Sidebar
-    sidebarLayout(
-        sidebarPanel(
-            textInput("text", label = h4("Type some text below"), value = "like here..."),
-           
+    titlePanel(
+        h1("Next word prediction app", align = "left")
+        
         ),
 
-        # Show a plot of the generated distribution
-        mainPanel(
-            h4("Predicted Words:"),
+        # Main Panel layout, no SidePanel for this app.
+        mainPanel( 
+            textInput("text", label = h5("Enter some text in the field below"), value = "hello world", width = '100%'),
+            
+            h5("Based on this I think the next word should be:"),
             verbatimTextOutput("result_output"),
             
             
             
             h6("This app was created as a part of the Coursera's Data Sceince
-            Specialization. The app provided top-3 most likely predictions
-            for the next word based on the text you entered in the input field. 
+            Specialization. The app predicts the next word based on the text you entered in the input field. 
             The app uses 3-gram Stupid BackOff (SBO) model that was previously
             pretrained on the English twitter, blogs, and news corpora available at:"),
             h6(a("https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip")),
@@ -44,4 +41,4 @@ shinyUI(fluidPage(
             
         )
     )
-))
+)

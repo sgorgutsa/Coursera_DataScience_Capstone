@@ -8,7 +8,7 @@ shiny_train <- sbo_predtable(object = t_train, # load dataset
                    .preprocess = sbo::preprocess, # Preprocessing transformation 
                    EOS = ".?!:;", # End-Of-Sentence tokens
                    lambda = 0.4, # Back-off penalization in SBO algorithm
-                   L = 3L, # Number of predictions for input
+                   L = 1L, # Number of predictions for input
                    filtered = "<UNK>"  # Exclude the <UNK> token from predictions
 )
-save(shiny_train, file = "shiny_train_save.rda")
+save(shiny_train, file = "shiny_train_save_1L.rda")
